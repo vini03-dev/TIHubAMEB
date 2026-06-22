@@ -1,0 +1,74 @@
+# ===================================================================
+# .gitignore — TIHub AMEB (C# / .NET / WinForms)
+# ===================================================================
+
+# ── Build outputs ─────────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+publish/
+*.dll
+*.exe
+!Tools/.gitkeep
+
+# ── Ferramenta de terceiros (NÃO versionar — baixar manualmente) ───
+# PsExec64.exe é distribuído pela Microsoft/Sysinternals sob sua
+# própria licença e não deve ser commitado neste repositório.
+# Veja README.md > Configuração Inicial para instruções de download.
+Tools/PsExec64.exe
+Tools/*.exe
+
+# ── Visual Studio ────────────────────────────────────────────────
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+
+# ── Arquivos de build do MSBuild ─────────────────────────────────
+*.cache
+*.ilk
+*.meta
+*.pdb
+*.idb
+
+# ── NuGet ────────────────────────────────────────────────────────
+*.nupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# ── Resultados de teste ──────────────────────────────────────────
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# ── Arquivos de publicação ───────────────────────────────────────
+*.pubxml
+*.pubxml.user
+*.publishproj
+PublishProfiles/
+
+# ── Logs gerados em runtime (ficam em %AppData%, não no repo) ─────
+*.log
+Logs/
+
+# ── Segredos e configuração local (NUNCA versionar) ────────────────
+appsettings.local.json
+*.env
+secrets.json
+connectionstrings.config
+
+# ── Dados sigilosos de impressoras (mantém só o exemplo no repo) ──
+Data/impressoras.json
+
+# ── Sistema operacional ──────────────────────────────────────────
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ── Editor ───────────────────────────────────────────────────────
+.idea/
+*.swp

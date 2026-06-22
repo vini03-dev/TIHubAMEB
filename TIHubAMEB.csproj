@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>iconfinder-technologymachineelectronicdevice25-4026435_113356 (1).ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Data\impressoras.json" />
+    <None Remove="iconfinder-technologymachineelectronicdevice25-4026435_113356 %281%29.ico" />
+    <None Remove="Tools\PsExec64.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\impressoras.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="iconfinder-technologymachineelectronicdevice25-4026435_113356 (1).ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Tools\PsExec64.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Guna.UI2.WinForms" Version="2.0.4.8" />
+    <PackageReference Include="SnmpSharpNet" Version="0.9.7" />
+    <PackageReference Include="System.DirectoryServices" Version="10.0.9" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.9" />
+    <PackageReference Include="System.Management" Version="10.0.9" />
+  </ItemGroup>
+
+</Project>

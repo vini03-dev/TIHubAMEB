@@ -1,0 +1,107 @@
+[
+  {
+    "nome": "MLT-SETOR-01",
+    "ip": "192.168.1.10",
+    "modelo": "XM5370",
+    "localizacao": "SETOR ADMINISTRATIVO",
+    "serialNumber": "EXEMPLO00001"
+  },
+  {
+    "nome": "PRT-SETOR-01",
+    "ip": "192.168.1.11",
+    "modelo": "MS826de",
+    "localizacao": "RECEPÇÃO PRINCIPAL",
+    "serialNumber": "EXEMPLO00002"
+  },
+  {
+    "nome": "PRT-SETOR-02",
+    "ip": "192.168.1.12",
+    "modelo": "M3250",
+    "localizacao": "SALA DE REUNIÕES",
+    "serialNumber": "EXEMPLO00003"
+  },
+  {
+    "nome": "PRT-SETOR-03",
+    "ip": "192.168.1.13",
+    "modelo": "M3250",
+    "localizacao": "FINANCEIRO",
+    "serialNumber": "EXEMPLO00004"
+  },
+  {
+    "nome": "MLT-SETOR-02",
+    "ip": "192.168.1.14",
+    "modelo": "MX522adhe",
+    "localizacao": "RECURSOS HUMANOS",
+    "serialNumber": "EXEMPLO00005"
+  },
+  {
+    "nome": "PRT-SETOR-04",
+    "ip": "192.168.1.15",
+    "modelo": "M3250",
+    "localizacao": "DIRETORIA",
+    "serialNumber": "EXEMPLO00006"
+  },
+  {
+    "nome": "PRT-SETOR-05",
+    "ip": "192.168.1.16",
+    "modelo": "CX522ADE",
+    "localizacao": "LABORATÓRIO",
+    "serialNumber": "EXEMPLO00007"
+  },
+  {
+    "nome": "PRT-SETOR-06",
+    "ip": "192.168.1.17",
+    "modelo": "M3250",
+    "localizacao": "FARMÁCIA",
+    "serialNumber": "EXEMPLO00008"
+  },
+  {
+    "nome": "MLT-SETOR-03",
+    "ip": "192.168.1.18",
+    "modelo": "MS826de",
+    "localizacao": "SECRETARIA",
+    "serialNumber": "EXEMPLO00009"
+  },
+  {
+    "nome": "PRT-SETOR-07",
+    "ip": "192.168.1.19",
+    "modelo": "M3250",
+    "localizacao": "COMPRAS",
+    "serialNumber": "EXEMPLO00010"
+  },
+  {
+    "nome": "PRT-SETOR-08",
+    "ip": "192.168.1.20",
+    "modelo": "MS826de",
+    "localizacao": "ALMOXARIFADO",
+    "serialNumber": "EXEMPLO00011"
+  },
+  {
+    "nome": "MLT-SETOR-04",
+    "ip": "192.168.1.21",
+    "modelo": "XM5370",
+    "localizacao": "PROTOCOLO",
+    "serialNumber": "EXEMPLO00012"
+  },
+  {
+    "nome": "PRT-SETOR-09",
+    "ip": "192.168.1.22",
+    "modelo": "CX522ADE",
+    "localizacao": "INFORMÁTICA",
+    "serialNumber": "EXEMPLO00013"
+  },
+  {
+    "nome": "PRT-SETOR-10",
+    "ip": "192.168.1.23",
+    "modelo": "M3250",
+    "localizacao": "MANUTENÇÃO",
+    "serialNumber": "EXEMPLO00014"
+  },
+  {
+    "nome": "MLT-SETOR-05",
+    "ip": "192.168.1.24",
+    "modelo": "MX522adhe",
+    "localizacao": "SERVIÇO SOCIAL",
+    "serialNumber": "EXEMPLO00015"
+  }
+]
