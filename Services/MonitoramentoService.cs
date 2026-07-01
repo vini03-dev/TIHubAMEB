@@ -21,6 +21,11 @@ namespace TIHubAMEB.Services
         // Evita coletas paralelas
         private bool _coletando = false;
 
+        // Contadores mantidos entre ticks para evitar recriação a cada 5s
+        // e eliminar o Thread.Sleep(300) de warm-up — o intervalo do timer já basta
+        private System.Diagnostics.PerformanceCounter? _cpuCounter;
+        private System.Diagnostics.PerformanceCounter? _ramCounter;
+
         public MonitoramentoService(LogService log)
         {
             _log = log;
@@ -92,17 +97,15 @@ namespace TIHubAMEB.Services
         {
             try
             {
-                // CPU
-                using var cpu = new System.Diagnostics.PerformanceCounter(
+                // CPU — reutiliza o contador entre ticks; sem Sleep(300)
+                _cpuCounter ??= new System.Diagnostics.PerformanceCounter(
                     "Processor", "% Processor Time", "_Total");
-                cpu.NextValue();
-                System.Threading.Thread.Sleep(300);
-                float cpuVal = cpu.NextValue();
+                float cpuVal = _cpuCounter.NextValue();
 
                 // RAM
-                using var ramCounter = new System.Diagnostics.PerformanceCounter(
+                _ramCounter ??= new System.Diagnostics.PerformanceCounter(
                     "Memory", "Available MBytes");
-                float dispMB = ramCounter.NextValue();
+                float dispMB = _ramCounter.NextValue();
                 long totalBytes = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
                 float totalMB = totalBytes / 1024f / 1024f;
                 float ramPct = totalMB > 0
@@ -123,6 +126,9 @@ namespace TIHubAMEB.Services
                 // Sistema operacional
                 string so = ObterSistemaOperacionalLocal();
 
+                // Modelo + Service Tag (local, via WMI local)
+                ObterModeloLocal(out string modeloLocal, out string tagLocal);
+
                 return new MaquinaInfo
                 {
                     NomeMaquina = Environment.MachineName,
@@ -142,6 +148,8 @@ namespace TIHubAMEB.Services
                         Environment.TickCount64),
                     Online = true,
                     Modo = "LOCAL",
+                    Modelo = modeloLocal,
+                    ServiceTag = tagLocal,
                     UltimaAtualizacao = DateTime.Now
                 };
             }
@@ -179,6 +187,7 @@ namespace TIHubAMEB.Services
                 string ip = ObterIPWmi(scope);
                 string so = ObterSistemaWmi(scope);
                 TimeSpan uptime = ObterUptimeWmi(scope);
+                ObterModeloWmi(scope, out string modelo, out string serviceTag);
 
                 return new MaquinaInfo
                 {
@@ -196,6 +205,8 @@ namespace TIHubAMEB.Services
                     TempoLigado = uptime,
                     Online = true,
                     Modo = "REMOTO",
+                    Modelo = modelo,
+                    ServiceTag = serviceTag,
                     UltimaAtualizacao = DateTime.Now
                 };
             }
@@ -364,12 +375,91 @@ namespace TIHubAMEB.Services
             return TimeSpan.Zero;
         }
 
+        private static void ObterModeloWmi(ManagementScope scope,
+            out string modelo, out string serviceTag)
+        {
+            modelo = "—";
+            serviceTag = "—";
+
+            // Modelo + fabricante via Win32_ComputerSystem
+            try
+            {
+                using var q = new ManagementObjectSearcher(scope,
+                    new ObjectQuery(
+                        "SELECT Manufacturer,Model FROM Win32_ComputerSystem"));
+                q.Options.Timeout = TimeSpan.FromSeconds(5);
+                foreach (ManagementObject o in q.Get())
+                {
+                    string fab = o["Manufacturer"]?.ToString()?.Trim() ?? "";
+                    string mod = o["Model"]?.ToString()?.Trim() ?? "";
+                    modelo = MaquinaRede.MontarModelo(fab, mod);
+                    break;
+                }
+            }
+            catch { }
+
+            // Service Tag / número de série via Win32_BIOS
+            try
+            {
+                using var q = new ManagementObjectSearcher(scope,
+                    new ObjectQuery(
+                        "SELECT SerialNumber FROM Win32_BIOS"));
+                q.Options.Timeout = TimeSpan.FromSeconds(5);
+                foreach (ManagementObject o in q.Get())
+                {
+                    string sn = o["SerialNumber"]?.ToString()?.Trim() ?? "";
+                    if (!string.IsNullOrEmpty(sn)) serviceTag = sn;
+                    break;
+                }
+            }
+            catch { }
+        }
+
+
+        // ── Utilitários locais ───────────────────────────────────────────
+
         // ── Utilitários locais ───────────────────────────────────────────
 
         private static string ObterIPLocal()
         {
             try
             {
+                // O adaptador correto é o ÚNICO que tem Gateway Padrão
+                // configurado e ativo. Não importa o nome (pode até ser
+                // Hyper-V/virtual) — o que vale é ter gateway de verdade.
+                // Isso funciona em qualquer máquina, com ou sem virtualização.
+                foreach (var ni in System.Net.NetworkInformation
+                    .NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus !=
+                        System.Net.NetworkInformation.OperationalStatus.Up)
+                        continue;
+
+                    var props = ni.GetIPProperties();
+
+                    // Precisa ter um gateway IPv4 válido (não 0.0.0.0)
+                    bool temGatewayValido = props.GatewayAddresses.Any(g =>
+                        g.Address.AddressFamily ==
+                            System.Net.Sockets.AddressFamily.InterNetwork &&
+                        !g.Address.ToString().Equals("0.0.0.0") &&
+                        !string.IsNullOrWhiteSpace(g.Address.ToString()));
+
+                    if (!temGatewayValido) continue;
+
+                    // Pega o IPv4 desse adaptador (que tem gateway),
+                    // ignorando faixas de auto-config (169.254) e loopback
+                    var ip = props.UnicastAddresses
+                        .Where(a => a.Address.AddressFamily ==
+                            System.Net.Sockets.AddressFamily.InterNetwork)
+                        .Select(a => a.Address.ToString())
+                        .FirstOrDefault(s =>
+                            !s.StartsWith("169.254") &&
+                            !s.StartsWith("127."));
+
+                    if (!string.IsNullOrEmpty(ip)) return ip;
+                }
+
+                // Fallback caso nada tenha gateway (raro)
                 return Dns.GetHostAddresses(Dns.GetHostName())
                     .FirstOrDefault(a =>
                         a.AddressFamily ==
@@ -381,19 +471,47 @@ namespace TIHubAMEB.Services
             catch { return "—"; }
         }
 
+        private static void ObterModeloLocal(
+            out string modelo, out string serviceTag)
+        {
+            modelo = "—";
+            serviceTag = "—";
+            try
+            {
+                var scope = new ManagementScope(@"\\.\root\cimv2");
+                scope.Connect();
+                ObterModeloWmi(scope, out modelo, out serviceTag);
+            }
+            catch { }
+        }
+
         private static string ObterSistemaOperacionalLocal()
         {
             try
             {
+                // O Windows 11 reporta build 22000 ou maior.
+                // A API OSDescription mostra "10.0.22000" mesmo no Win 11
+                // (pegadinha da Microsoft), então checamos pelo BUILD.
+                var build = Environment.OSVersion.Version.Build;
+
+                if (build >= 22000) return "Win 11";
+                if (build >= 10240) return "Win 10";
+
+                // Versões mais antigas
                 var so = System.Runtime.InteropServices
                     .RuntimeInformation.OSDescription;
-                if (so.Contains("11")) return "Win 11";
-                if (so.Contains("10")) return "Win 10";
+                if (so.Contains("8.1")) return "Win 8.1";
+                if (so.Contains("8")) return "Win 8";
+                if (so.Contains("7")) return "Win 7";
                 return so;
             }
             catch { return "—"; }
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            _cpuCounter?.Dispose();
+            _ramCounter?.Dispose();
+        }
     }
 }

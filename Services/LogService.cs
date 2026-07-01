@@ -9,6 +9,7 @@ namespace TIHubAMEB.Services
     public class LogService
     {
         private readonly string _pastaLogs;
+        private readonly object _lockLog = new();
         private RichTextBox? _rtbAlvo;
 
         public LogService()
@@ -78,9 +79,12 @@ namespace TIHubAMEB.Services
                     _pastaLogs,
                     $"{DateTime.Now:yyyy-MM-dd}.log");
 
-                File.AppendAllText(
-                    arquivo,
-                    entry.ToString() + Environment.NewLine);
+                lock (_lockLog)
+                {
+                    File.AppendAllText(
+                        arquivo,
+                        entry.ToString() + Environment.NewLine);
+                }
             }
             catch { /* nunca propaga erro de log */ }
         }

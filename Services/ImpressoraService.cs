@@ -15,13 +15,14 @@ namespace TIHubAMEB.Services
     {
         private readonly LogService _log;
 
-        // Caminho do arquivo real, ao lado do executável
         private static readonly string CaminhoArquivoReal = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory, "Data", "impressoras.json");
 
-        // Caminho do arquivo de exemplo — usado como aviso se o real não existir
         private static readonly string CaminhoArquivoExemplo = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory, "Data", "impressoras.exemplo.json");
+
+        private static readonly System.Text.Json.JsonSerializerOptions _jsonOpts =
+            new() { PropertyNameCaseInsensitive = true };
 
         // OIDs padrão do Printer-MIB (RFC 1759) — funcionam na
         // grande maioria das multifuncionais Lexmark, HP, Brother etc.
@@ -63,11 +64,7 @@ namespace TIHubAMEB.Services
                 string json = await File.ReadAllTextAsync(CaminhoArquivoReal);
 
                 var cadastros = JsonSerializer.Deserialize<List<ImpressoraCadastroJson>>(
-                    json,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? new List<ImpressoraCadastroJson>();
+                    json, _jsonOpts) ?? new List<ImpressoraCadastroJson>();
 
                 var lista = cadastros.Select(c => new ImpressoraInfo
                 {

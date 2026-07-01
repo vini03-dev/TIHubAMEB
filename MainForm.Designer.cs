@@ -127,6 +127,22 @@ namespace TIHubAMEB.Forms
             tabSistema = new TabPage();
             tabLogs = new TabPage();
             tabImpressoras = new TabPage();
+            tabProgramas = new TabPage();
+
+            // Programas (novo)
+            panelProgModo = new Guna2Panel();
+            btnModoBusca = new Guna2Button();
+            btnModoLista = new Guna2Button();
+            panelProgBusca = new Guna2Panel();
+            panelProgLista = new Guna2Panel();
+            txtBuscaPrograma = new Guna2TextBox();
+            btnBuscarPrograma = new Guna2Button();
+            txtMaquinaProg = new Guna2TextBox();
+            txtFiltroProg = new Guna2TextBox();
+            btnListarProg = new Guna2Button();
+            lstProgramas = new ListView();
+            lblProgInfo = new Label();
+            progressProg = new Guna2ProgressBar();
 
             lblMaquinaTopbar = new Label();
             lblMaquinaTopbar.Text = "LOCAL";
@@ -209,6 +225,15 @@ namespace TIHubAMEB.Forms
             rbHospital = new Guna2RadioButton();
             btnOtimizar = new Guna2Button();
             lblOtimDesc = new Label();
+
+            // Inicialização (novo)
+            panelInicializacao = new Guna2Panel();
+            txtMaquinaInit = new Guna2TextBox();
+            btnListarInit = new Guna2Button();
+            btnDesativarInit = new Guna2Button();
+            btnReativarInit = new Guna2Button();
+            lstInicializacao = new ListView();
+            lblInitInfo = new Label();
 
             // Rede
             panelBusca = new Guna2Panel();
@@ -326,6 +351,130 @@ namespace TIHubAMEB.Forms
             tabImpressoras.Controls.Add(panelFiltroImp);
             tabImpressoras.Controls.Add(panelListaImp);
 
+            // ════════════════════════════════════════════════════════════
+            // ABA PROGRAMAS
+            // ════════════════════════════════════════════════════════════
+
+            // --- Barra de alternância de modo (topo) ---
+            panelProgModo = CriarCard(10, 10, 1130, 56);
+            panelProgModo.Name = "panelProgModo";
+
+            btnModoBusca = CriarBotao("🔍  Buscar programa nas máquinas",
+                10, 8, 555, 40,
+                UIHelper.CorAzulFundo, UIHelper.CorAzul, 8);
+            btnModoBusca.Name = "btnModoBusca";
+            btnModoBusca.Font = UIHelper.FonteNormal;
+            btnModoBusca.Click += btnModoBusca_Click;
+
+            btnModoLista = CriarBotao("💻  Ver programas de uma máquina",
+                575, 8, 545, 40,
+                UIHelper.CorPainel, UIHelper.CorTextoClaro, 8);
+            btnModoLista.Name = "btnModoLista";
+            btnModoLista.Font = UIHelper.FonteNormal;
+            btnModoLista.Click += btnModoLista_Click;
+
+            panelProgModo.Controls.Add(btnModoBusca);
+            panelProgModo.Controls.Add(btnModoLista);
+
+            // --- Painel do MODO BUSCA (busca em massa) ---
+            panelProgBusca = CriarCard(10, 74, 1130, 50);
+            panelProgBusca.Name = "panelProgBusca";
+
+            txtBuscaPrograma = new Guna2TextBox();
+            UIHelper.EstilizarTextBox(txtBuscaPrograma);
+            txtBuscaPrograma.PlaceholderText =
+                "Nome do programa (ex: kaspersky)...";
+            txtBuscaPrograma.Location = new Point(14, 9);
+            txtBuscaPrograma.Size = new Size(850, 32);
+            txtBuscaPrograma.Name = "txtBuscaPrograma";
+
+            btnBuscarPrograma = CriarBotao("Buscar nas online",
+                874, 9, 240, 32,
+                UIHelper.CorAzulFundo, UIHelper.CorAzul, 8);
+            btnBuscarPrograma.Name = "btnBuscarPrograma";
+            btnBuscarPrograma.Font = UIHelper.FonteNormal;
+            btnBuscarPrograma.Click += btnBuscarPrograma_Click;
+
+            panelProgBusca.Controls.Add(txtBuscaPrograma);
+            panelProgBusca.Controls.Add(btnBuscarPrograma);
+
+            // --- Painel do MODO LISTA (uma máquina) — começa escondido ---
+            panelProgLista = CriarCard(10, 74, 1130, 50);
+            panelProgLista.Name = "panelProgLista";
+            panelProgLista.Visible = false;
+
+            txtMaquinaProg = new Guna2TextBox();
+            UIHelper.EstilizarTextBox(txtMaquinaProg);
+            txtMaquinaProg.PlaceholderText = "Máquina (ex: AME-ADM-10)...";
+            txtMaquinaProg.Location = new Point(14, 9);
+            txtMaquinaProg.Size = new Size(300, 32);
+            txtMaquinaProg.Name = "txtMaquinaProg";
+
+            txtFiltroProg = new Guna2TextBox();
+            UIHelper.EstilizarTextBox(txtFiltroProg);
+            txtFiltroProg.PlaceholderText = "Filtrar programa...";
+            txtFiltroProg.Location = new Point(324, 9);
+            txtFiltroProg.Size = new Size(540, 32);
+            txtFiltroProg.Name = "txtFiltroProg";
+            txtFiltroProg.TextChanged += txtFiltroProg_TextChanged;
+
+            btnListarProg = CriarBotao("Listar",
+                874, 9, 240, 32,
+                UIHelper.CorAzulFundo, UIHelper.CorAzul, 8);
+            btnListarProg.Name = "btnListarProg";
+            btnListarProg.Font = UIHelper.FonteNormal;
+            btnListarProg.Click += btnListarProg_Click;
+
+            panelProgLista.Controls.Add(txtMaquinaProg);
+            panelProgLista.Controls.Add(txtFiltroProg);
+            panelProgLista.Controls.Add(btnListarProg);
+
+            // --- Barra de progresso (compartilhada) ---
+            progressProg = new Guna2ProgressBar();
+            UIHelper.EstilizarProgressBar(progressProg);
+            progressProg.Location = new Point(10, 132);
+            progressProg.Size = new Size(1130, 6);
+            progressProg.Value = 0;
+            progressProg.Visible = false;
+            progressProg.Name = "progressProg";
+
+            // --- Info (contador de resultados) ---
+            lblProgInfo = CriarLabel("",
+                10, 144, 1130, 18, UIHelper.CorTextoClaro, 8.5f);
+            lblProgInfo.Name = "lblProgInfo";
+
+            // --- Lista de resultados (grande) ---
+            var cardProgLista = CriarCard(10, 168, 1130, 442);
+
+            cardProgLista.Name = "cardProgLista";
+
+            lstProgramas = new ListView
+            {
+                Location = new Point(1, 1),
+                Size = new Size(1128, 440),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = false,
+                BackColor = UIHelper.CorFundo,
+                ForeColor = UIHelper.CorTexto,
+                BorderStyle = BorderStyle.None,
+                Font = UIHelper.FonteNormal,
+                Name = "lstProgramas"
+            };
+            lstProgramas.Columns.Add("Máquina", 200);
+            lstProgramas.Columns.Add("Programa", 480);
+            lstProgramas.Columns.Add("Versão", 200);
+            lstProgramas.Columns.Add("Fabricante", 240);
+
+            cardProgLista.Controls.Add(lstProgramas);
+
+            tabProgramas.Controls.Add(panelProgModo);
+            tabProgramas.Controls.Add(panelProgBusca);
+            tabProgramas.Controls.Add(panelProgLista);
+            tabProgramas.Controls.Add(progressProg);
+            tabProgramas.Controls.Add(lblProgInfo);
+            tabProgramas.Controls.Add(cardProgLista);
+
             // Logs
             panelToolbarLogs = new Guna2Panel();
             btnAbrirLogs = new Guna2Button();
@@ -343,6 +492,7 @@ namespace TIHubAMEB.Forms
             tabMain.Controls.Add(tabUsuarios);
             tabMain.Controls.Add(tabSistema);
             tabMain.Controls.Add(tabImpressoras);
+            tabMain.Controls.Add(tabProgramas);
             tabMain.Controls.Add(tabLogs);
             tabMain.Dock = DockStyle.Fill;
             tabMain.ItemSize = new Size(120, 36);
@@ -369,6 +519,7 @@ namespace TIHubAMEB.Forms
             ConfigTab(tabUsuarios, "tabUsuarios", "  Usuários");
             ConfigTab(tabSistema, "tabSistema", "  Sistema");
             ConfigTab(tabImpressoras, "tabImpressoras", "  Impressoras");
+            ConfigTab(tabProgramas, "tabProgramas", "  Programas");
             ConfigTab(tabLogs, "tabLogs", "  Logs");
 
             // ════════════════════════════════════════════════════════════
@@ -559,8 +710,6 @@ namespace TIHubAMEB.Forms
             btnExecutar.Click += btnExecutar_Click;
 
             panelPersonalizado.Controls.Add(lblPersTit);
-            panelPersonalizado.Controls.Add(chkEmails);
-            panelPersonalizado.Controls.Add(dtpEmails);
             panelPersonalizado.Controls.Add(btnExecutar);
 
             // Progresso
@@ -653,6 +802,76 @@ namespace TIHubAMEB.Forms
             btnOtimizar.Name = "btnOtimizar";
             btnOtimizar.Font = new Font("Segoe UI", 12f, FontStyle.Bold);
             btnOtimizar.Click += btnOtimizar_Click;
+
+            // ── Seção Gerenciador de Inicialização ───────────────────────
+            panelInicializacao = CriarCard(10, 295, 1130, 315);
+            panelInicializacao.Name = "panelInicializacao";
+
+            var lblInitTit = CriarLabel("GERENCIADOR DE INICIALIZAÇÃO",
+                14, 12, 300, 18, UIHelper.CorTextoClaro, 8.5f, true);
+
+            txtMaquinaInit = new Guna2TextBox();
+            UIHelper.EstilizarTextBox(txtMaquinaInit);
+            txtMaquinaInit.PlaceholderText =
+                "Máquina (vazio = este PC)...";
+            txtMaquinaInit.Location = new Point(14, 38);
+            txtMaquinaInit.Size = new Size(300, 36);
+            txtMaquinaInit.Name = "txtMaquinaInit";
+
+            btnListarInit = CriarBotao("🔍  Listar",
+                324, 38, 120, 36,
+                UIHelper.CorAzulFundo, UIHelper.CorAzul, 8);
+            btnListarInit.Name = "btnListarInit";
+            btnListarInit.Font = UIHelper.FonteNormal;
+            btnListarInit.Click += btnListarInit_Click;
+
+            lblInitInfo = CriarLabel("",
+                460, 48, 660, 18, UIHelper.CorTextoClaro, 8.5f);
+            lblInitInfo.Name = "lblInitInfo";
+
+            // Lista de itens de inicialização
+            lstInicializacao = new ListView
+            {
+                Location = new Point(14, 84),
+                Size = new Size(1102, 175),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = false,
+                BackColor = UIHelper.CorFundo,
+                ForeColor = UIHelper.CorTexto,
+                BorderStyle = BorderStyle.None,
+                Font = UIHelper.FonteNormal,
+                Name = "lstInicializacao"
+            };
+            lstInicializacao.Columns.Add("Programa", 240);
+            lstInicializacao.Columns.Add("Caminho", 560);
+            lstInicializacao.Columns.Add("Origem", 110);
+            lstInicializacao.Columns.Add("Estado", 180);
+
+            // Botões de ação
+            btnDesativarInit = CriarBotao("⊘  Desativar selecionado",
+                14, 269, 250, 36,
+                UIHelper.CorVermelhoFundo, UIHelper.CorVermelho, 8);
+            btnDesativarInit.Name = "btnDesativarInit";
+            btnDesativarInit.Font = UIHelper.FonteNormal;
+            btnDesativarInit.Click += btnDesativarInit_Click;
+
+            btnReativarInit = CriarBotao("✓  Reativar selecionado",
+                274, 269, 250, 36,
+                UIHelper.CorVerdeFundo, UIHelper.CorVerde, 8);
+            btnReativarInit.Name = "btnReativarInit";
+            btnReativarInit.Font = UIHelper.FonteNormal;
+            btnReativarInit.Click += btnReativarInit_Click;
+
+            panelInicializacao.Controls.Add(lblInitTit);
+            panelInicializacao.Controls.Add(txtMaquinaInit);
+            panelInicializacao.Controls.Add(btnListarInit);
+            panelInicializacao.Controls.Add(lblInitInfo);
+            panelInicializacao.Controls.Add(lstInicializacao);
+            panelInicializacao.Controls.Add(btnDesativarInit);
+            panelInicializacao.Controls.Add(btnReativarInit);
+
+            tabOtimizacao.Controls.Add(panelInicializacao);
 
             tabOtimizacao.Controls.Add(panelOtimPerfis);
             tabOtimizacao.Controls.Add(panelOtimDesc);
@@ -905,7 +1124,7 @@ namespace TIHubAMEB.Forms
             pnlSetores.Size = new Size(1130, 36);
             pnlSetores.Name = "pnlSetores";
 
-            panelListaMaq = CriarCard(10, 124, 1130, 460);
+            panelListaMaq = CriarCard(10, 124, 1130, 418);
             panelListaMaq.Name = "panelListaMaq";
 
             lstMaquinas.View = View.Details;
@@ -921,20 +1140,49 @@ namespace TIHubAMEB.Forms
             lstMaquinas.Size = new Size(1126, 436);
             lstMaquinas.Name = "lstMaquinas";
             lstMaquinas.DoubleClick += lstMaquinas_DoubleClick;
-            lstMaquinas.Columns.Add("Máquina", 200);
-            lstMaquinas.Columns.Add("Setor", 80);
-            lstMaquinas.Columns.Add("IP", 130);
-            lstMaquinas.Columns.Add("Status", 120);
-            lstMaquinas.Columns.Add("Sistema", 90);
-            lstMaquinas.Columns.Add("Usuário", 130);  // ← novo
-            lstMaquinas.Columns.Add("Último Login", 110);
-            lstMaquinas.Columns.Add("OU", 150);
+            lstMaquinas.Columns.Add("Máquina", 150);
+            lstMaquinas.Columns.Add("IP", 110);
+            lstMaquinas.Columns.Add("Status", 110);
+            lstMaquinas.Columns.Add("Sistema", 75);
+            lstMaquinas.Columns.Add("Usuário", 120);
+            lstMaquinas.Columns.Add("Modelo", 140);
+            lstMaquinas.Columns.Add("Service Tag", 110);
+            lstMaquinas.Columns.Add("Último Login", 100);
+            lstMaquinas.Columns.Add("OU", 130);
 
             panelListaMaq.Controls.Add(lstMaquinas);
+
+            // ── Rodapé: auto-refresh ──────────────────────────────────────
+            panelRodapeMaq = CriarCard(10, 548, 1130, 36);
+            panelRodapeMaq.Name = "panelRodapeMaq";
+
+            chkAutoRefresh = new Guna2CheckBox();
+            chkAutoRefresh.Text = "Atualizar automaticamente (a cada 3 min)";
+            chkAutoRefresh.ForeColor = UIHelper.CorTexto;
+            chkAutoRefresh.Font = UIHelper.FonteNormal;
+            chkAutoRefresh.Location = new Point(14, 7);
+            chkAutoRefresh.Size = new Size(340, 22);
+            chkAutoRefresh.Name = "chkAutoRefresh";
+            chkAutoRefresh.Checked = true;
+            chkAutoRefresh.CheckedState.FillColor = UIHelper.CorAzul;
+
+            lblUltimaAtualizacao = new Label();
+            lblUltimaAtualizacao.Text = "Última atualização automática: --:--";
+            lblUltimaAtualizacao.ForeColor = UIHelper.CorTextoClaro;
+            lblUltimaAtualizacao.BackColor = Color.Transparent;
+            lblUltimaAtualizacao.Font = UIHelper.FonteNormal;
+            lblUltimaAtualizacao.Location = new Point(790, 8);
+            lblUltimaAtualizacao.Size = new Size(326, 20);
+            lblUltimaAtualizacao.TextAlign = ContentAlignment.MiddleRight;
+            lblUltimaAtualizacao.Name = "lblUltimaAtualizacao";
+
+            panelRodapeMaq.Controls.Add(chkAutoRefresh);
+            panelRodapeMaq.Controls.Add(lblUltimaAtualizacao);
 
             tabMaquinas.Controls.Add(panelFiltroMaq);
             tabMaquinas.Controls.Add(pnlSetores);
             tabMaquinas.Controls.Add(panelListaMaq);
+            tabMaquinas.Controls.Add(panelRodapeMaq);
 
             // ════════════════════════════════════════════════════════════
             // ABA USUÁRIOS
@@ -1271,7 +1519,7 @@ namespace TIHubAMEB.Forms
             panelFooter.Size = new Size(1280, 24);
             panelFooter.Name = "panelFooter";
 
-            lblFooterDev.Text = "Desenvolvido por Vinicius Santos da Silva  ·  TI AMEB";
+            lblFooterDev.Text = "Desenvolvido por Vinicius Santos da Silva";
             lblFooterDev.Font = new Font("Segoe UI", 8f, FontStyle.Regular);
             lblFooterDev.ForeColor = UIHelper.CorTextoEsc;
             lblFooterDev.BackColor = Color.Transparent;
@@ -1279,7 +1527,7 @@ namespace TIHubAMEB.Forms
             lblFooterDev.Size = new Size(600, 16);
             lblFooterDev.Name = "lblFooterDev";
 
-            lblFooterVer.Text = "v1.0.0";
+            lblFooterVer.Text = "v1.1.0";
             lblFooterVer.Font = new Font("Segoe UI", 8f, FontStyle.Regular);
             lblFooterVer.ForeColor = UIHelper.CorTextoClaro;
             lblFooterVer.BackColor = Color.Transparent;
@@ -1352,6 +1600,15 @@ namespace TIHubAMEB.Forms
                 tabRede, tabMaquinas, tabUsuarios,
                 tabSistema, tabLogs, tabImpressoras;
 
+        private TabPage tabProgramas;
+        private Guna2Panel panelProgModo, panelProgBusca, panelProgLista;
+        private Guna2Button btnModoBusca, btnModoLista;
+        private Guna2Button btnBuscarPrograma, btnListarProg;
+        private Guna2TextBox txtBuscaPrograma, txtMaquinaProg, txtFiltroProg;
+        private ListView lstProgramas;
+        private Label lblProgInfo;
+        private Guna2ProgressBar progressProg;
+
         // Dashboard
         private Guna2Panel panelCpu, panelRam, panelDisco;
         private Guna2Panel panelInfoMaquina, panelInfoSistema;
@@ -1370,8 +1627,7 @@ namespace TIHubAMEB.Forms
         private Guna2Button btnLimpezaLeve, btnLimpezaMedia, btnLimpezaAvancada;
         private Guna2Button btnExecutar, btnCancelar;
         private Guna2CheckBox chkTemp, chkDns, chkPrefetch, chkLixeira;
-        private Guna2CheckBox chkCache, chkWinUpdate, chkSpool, chkEmails;
-        private DateTimePicker dtpEmails;
+        private Guna2CheckBox chkCache, chkWinUpdate, chkSpool;
         private Label lblEtapaAtual;
         private Guna2ProgressBar progressExecucao;
 
@@ -1397,6 +1653,9 @@ namespace TIHubAMEB.Forms
         private ListView lstMaquinas;
         private Label lblTotalMaq, lblOnlineMaq;
         private Panel pnlSetores;
+        private Guna2Panel panelRodapeMaq;
+        private Guna2CheckBox chkAutoRefresh;
+        private Label lblUltimaAtualizacao;
 
         // Usuários
         private Guna2Panel panelFiltroUsr, panelListaUsr;
@@ -1447,6 +1706,12 @@ namespace TIHubAMEB.Forms
         private Label lblHeaderStatus;
         private Label lblFooterDev;
         private Label lblFooterVer;
+
+        private Guna2Panel panelInicializacao;
+        private Guna2TextBox txtMaquinaInit;
+        private Guna2Button btnListarInit, btnDesativarInit, btnReativarInit;
+        private ListView lstInicializacao;
+        private Label lblInitInfo;
 
     }
 }

@@ -12,6 +12,8 @@
         public string SistemaOp { get; set; } = string.Empty;
         public string Setor { get; set; } = string.Empty;
         public string Descricao { get; set; } = string.Empty;
+        public string Modelo { get; set; } = "—";      // ex: Dell OptiPlex 7090
+        public string ServiceTag { get; set; } = "—";  // número de série
 
         // ── Status ───────────────────────────────────────────────────────
         public bool Online { get; set; }
@@ -44,6 +46,54 @@
                     parte.All(char.IsLetter))
                     return parte;
             return partes.Length >= 2 ? partes[^2] : "Outros";
+        }
+
+        // Junta fabricante + modelo de forma limpa, evitando repetição.
+        // Remove palavras genéricas dos fabricantes para caber na tela.
+        // Definido aqui uma vez só — usado por MaquinasService e MonitoramentoService.
+        public static string MontarModelo(string fabricante, string modelo)
+        {
+            string[] lixo =
+            {
+                "Inc.", "Inc", "Corporation", "Corp.", "Corp", "Co.",
+                "LLC", "Ltd.", "Ltd", "Computer", "Computers",
+                "Technologies", "Technology", "International",
+                "To Be Filled By O.E.M.", "System Manufacturer",
+                "Default string", "O.E.M.", "(R)", "(TM)"
+            };
+
+            string Limpar(string txt)
+            {
+                if (string.IsNullOrWhiteSpace(txt)) return "";
+                foreach (var termo in lixo)
+                    txt = txt.Replace(termo, "", StringComparison.OrdinalIgnoreCase);
+                return string.Join(" ", txt.Split(' ',
+                    StringSplitOptions.RemoveEmptyEntries)).Trim();
+            }
+
+            fabricante = Limpar(fabricante);
+            modelo = Limpar(modelo);
+
+            if (string.IsNullOrEmpty(fabricante) && string.IsNullOrEmpty(modelo))
+                return "—";
+            if (string.IsNullOrEmpty(fabricante)) return modelo;
+            if (string.IsNullOrEmpty(modelo)) return fabricante;
+
+            if (modelo.Contains(fabricante, StringComparison.OrdinalIgnoreCase))
+                return modelo;
+
+            string[] modelosAutoexplicativos =
+            {
+                "OptiPlex", "Latitude", "Precision", "Inspiron", "Vostro",
+                "ThinkCentre", "ThinkPad", "IdeaPad", "ThinkStation",
+                "EliteDesk", "ProDesk", "EliteBook", "ProBook", "Pavilion",
+                "Aspire", "Veriton"
+            };
+            foreach (var m in modelosAutoexplicativos)
+                if (modelo.Contains(m, StringComparison.OrdinalIgnoreCase))
+                    return modelo;
+
+            return $"{fabricante} {modelo}";
         }
     }
 }

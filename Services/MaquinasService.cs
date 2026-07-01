@@ -145,14 +145,15 @@ namespace TIHubAMEB.Services
 
             int total = maquinas.Count;
             int concluido = 0;
-            var semaforo = new SemaphoreSlim(20);
+            var semaforoPing = new SemaphoreSlim(20);
+            var semaforoWmi = new SemaphoreSlim(10);
+            var tarefasWmi = new System.Collections.Concurrent.ConcurrentBag<Task>();
 
             var tarefas = maquinas.Select(async maquina =>
             {
-                await semaforo.WaitAsync();
+                await semaforoPing.WaitAsync();
                 try
                 {
-                    // Ping primeiro
                     var (online, ms) = await PingRapidoAsync(maquina.Nome);
                     maquina.Online = online;
                     maquina.PingMs = ms;
@@ -173,13 +174,8 @@ namespace TIHubAMEB.Services
                         }
                         catch { }
 
-                        // Usuário conectado via WMI em background
-                        // Não bloqueia o ping em massa
-                        _ = Task.Run(() =>
-                        {
-                            maquina.UsuarioConectado =
-                                ObterUsuarioWmi(maquina.Nome);
-                        });
+                        // WMI com semáforo próprio — não bloqueia o ping em massa
+                        tarefasWmi.Add(BuscarDadosWmiAsync(maquina, semaforoWmi));
                     }
 
                     Interlocked.Increment(ref concluido);
@@ -188,21 +184,55 @@ namespace TIHubAMEB.Services
                 }
                 finally
                 {
-                    semaforo.Release();
+                    semaforoPing.Release();
                 }
             });
 
             await Task.WhenAll(tarefas);
+
+            // Aguarda todos os WMI terminarem antes de retornar —
+            // elimina race condition com nova verificação e garante
+            // que usuário/modelo estejam preenchidos ao atualizar a lista
+            if (!tarefasWmi.IsEmpty)
+                await Task.WhenAll(tarefasWmi);
 
             int online2 = maquinas.Count(m => m.Online);
             _log.Registrar("REDE", "Verificar status",
                 $"{online2}/{total} online", true, TipoLog.Maquinas);
         }
 
-        // ── Usuário via WMI ───────────────────────────────────────────────
-
-        private static string ObterUsuarioWmi(string maquina)
+        private static async Task BuscarDadosWmiAsync(
+            MaquinaRede maquina, SemaphoreSlim semaforo)
         {
+            await semaforo.WaitAsync();
+            try
+            {
+                await Task.Run(() =>
+                {
+                    ObterDadosWmi(maquina.Nome,
+                        out string usuario,
+                        out string modelo,
+                        out string serviceTag);
+                    maquina.UsuarioConectado = usuario;
+                    maquina.Modelo = modelo;
+                    maquina.ServiceTag = serviceTag;
+                });
+            }
+            finally
+            {
+                semaforo.Release();
+            }
+        }
+
+        // Busca usuário conectado, modelo e service tag numa só conexão WMI.
+        // Mais eficiente que abrir 3 conexões separadas por máquina.
+        private static void ObterDadosWmi(string maquina,
+            out string usuario, out string modelo, out string serviceTag)
+        {
+            usuario = "—";
+            modelo = "—";
+            serviceTag = "—";
+
             try
             {
                 var options = new ConnectionOptions
@@ -217,24 +247,46 @@ namespace TIHubAMEB.Services
                     $@"\\{maquina}\root\cimv2", options);
                 scope.Connect();
 
-                using var q = new ManagementObjectSearcher(scope,
+                // Usuário + Modelo (mesma classe Win32_ComputerSystem)
+                using (var q = new ManagementObjectSearcher(scope,
                     new ObjectQuery(
-                        "SELECT UserName FROM Win32_ComputerSystem"));
-                q.Options.Timeout = TimeSpan.FromSeconds(4);
-
-                foreach (ManagementObject o in q.Get())
+                        "SELECT UserName,Manufacturer,Model " +
+                        "FROM Win32_ComputerSystem")))
                 {
-                    string? u = o["UserName"]?.ToString();
-                    if (!string.IsNullOrEmpty(u))
+                    q.Options.Timeout = TimeSpan.FromSeconds(4);
+                    foreach (ManagementObject o in q.Get())
                     {
-                        int b = u.IndexOf('\\');
-                        return b >= 0 ? u[(b + 1)..] : u;
+                        string? u = o["UserName"]?.ToString();
+                        if (!string.IsNullOrEmpty(u))
+                        {
+                            int b = u.IndexOf('\\');
+                            usuario = b >= 0 ? u[(b + 1)..] : u;
+                        }
+
+                        string fab = o["Manufacturer"]?.ToString()?.Trim() ?? "";
+                        string mod = o["Model"]?.ToString()?.Trim() ?? "";
+                        modelo = MaquinaRede.MontarModelo(fab, mod);
+                        break;
+                    }
+                }
+
+                // Service Tag via Win32_BIOS
+                using (var q = new ManagementObjectSearcher(scope,
+                    new ObjectQuery(
+                        "SELECT SerialNumber FROM Win32_BIOS")))
+                {
+                    q.Options.Timeout = TimeSpan.FromSeconds(4);
+                    foreach (ManagementObject o in q.Get())
+                    {
+                        string sn = o["SerialNumber"]?.ToString()?.Trim() ?? "";
+                        if (!string.IsNullOrEmpty(sn)) serviceTag = sn;
+                        break;
                     }
                 }
             }
             catch { }
-            return "—";
         }
+
 
         // ── Filtros ───────────────────────────────────────────────────────
 

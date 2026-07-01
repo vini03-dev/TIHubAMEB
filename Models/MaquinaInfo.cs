@@ -13,6 +13,8 @@
         public string SistemaOp { get; set; } = string.Empty; // Win 10 / Win 11
         public string Dominio { get; set; } = string.Empty;
         public string Setor { get; set; } = string.Empty; // detectado pelo nome
+        public string Modelo { get; set; } = "—";      // ex: Dell OptiPlex 7090
+        public string ServiceTag { get; set; } = "—";  // número de série / service tag
 
         // ── Métricas de hardware ─────────────────────────────────────────
         public float CpuPercent { get; set; }
@@ -32,26 +34,8 @@
 
         // Detecta o setor automaticamente pelo nome da máquina
         // Ex: VIVO-NOT-INF-01 → INF
-        public static string DetectarSetor(string nomeMaquina)
-        {
-            if (string.IsNullOrWhiteSpace(nomeMaquina))
-                return "Outros";
-
-            var partes = nomeMaquina.ToUpper().Split('-');
-
-            // Tenta encontrar uma parte que pareça setor (3 letras)
-            foreach (var parte in partes)
-            {
-                if (parte.Length == 3 && parte.All(char.IsLetter))
-                    return parte;
-            }
-
-            // Se não encontrar padrão, pega a penúltima parte
-            if (partes.Length >= 2)
-                return partes[^2];
-
-            return "Outros";
-        }
+        public static string DetectarSetor(string nomeMaquina) =>
+            MaquinaRede.DetectarSetor(nomeMaquina);
 
         // Formata o uptime ex: 04h 32m
         public string UptimeFormatado =>

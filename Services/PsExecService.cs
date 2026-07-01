@@ -134,8 +134,6 @@ namespace TIHubAMEB.Services
 
                 var r = await ExecutarAsync(lista[i], maquina);
                 resultados.Add(r);
-
-                await Task.Delay(100, ct);
             }
 
             return resultados;
@@ -151,8 +149,6 @@ namespace TIHubAMEB.Services
             try
             {
                 using var processo = new Process();
-                using var cts = new CancellationTokenSource(
-                    TimeSpan.FromSeconds(TimeoutSegundos));
 
                 processo.StartInfo = new ProcessStartInfo
                 {
@@ -173,12 +169,11 @@ namespace TIHubAMEB.Services
                 var saida = processo.StandardOutput.ReadToEndAsync();
                 var erro = processo.StandardError.ReadToEndAsync();
 
-                // Aguarda com timeout
-                var concluiu = await Task.WhenAny(
-                    Task.WhenAll(saida, erro),
-                    Task.Delay(TimeSpan.FromSeconds(TimeoutSegundos)));
+                // Guarda a referência do delay para comparar corretamente no WhenAny
+                var taskTimeout = Task.Delay(TimeSpan.FromSeconds(TimeoutSegundos));
+                var concluiu = await Task.WhenAny(Task.WhenAll(saida, erro), taskTimeout);
 
-                if (concluiu == Task.Delay(TimeSpan.FromSeconds(TimeoutSegundos)))
+                if (concluiu == taskTimeout)
                 {
                     // Timeout — mata o processo
                     try { processo.Kill(true); } catch { }
